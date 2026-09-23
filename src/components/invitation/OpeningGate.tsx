@@ -22,7 +22,7 @@ export function OpeningGate({
     window.setTimeout(() => {
       onComplete();
     }, 1650);
-    window.setTimeout(() => setGone(true), 2400);
+    window.setTimeout(() => setGone(true), 2000);
   };
 
   if (gone) return null;
@@ -50,7 +50,7 @@ export function OpeningGate({
 
       <div className="relative z-20 flex min-h-full flex-col items-center justify-center px-4">
         <p className="envelope-caption mb-7">
-          A wedding invitation awaits
+          {data.gateCaption}
         </p>
 
         <button
@@ -80,7 +80,7 @@ export function OpeningGate({
         </button>
 
         <p className="envelope-caption mt-8">
-          {opening ? "Opening…" : "Tap the seal to open"}
+          {opening ? "Opening…" : data.gateHint}
         </p>
       </div>
     </div>

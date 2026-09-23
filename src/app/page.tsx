@@ -1,6 +1,5 @@
-import { InvitationExperience } from "@/components/invitation/InvitationExperience";
-import { invitation } from "@/lib/invitation";
+import { redirect } from "next/navigation";
 
 export default function Home() {
-  return <InvitationExperience data={invitation} />;
+  redirect("/login");
 }

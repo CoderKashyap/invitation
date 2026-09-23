@@ -40,7 +40,7 @@ function CeremonyPanel({ ceremony }: { ceremony: Ceremony }) {
   return (
     <section
       id={ceremony.id}
-      className="relative flex h-[68vh] min-h-[68vh] items-end overflow-hidden sm:items-center"
+      className="relative flex h-[68vh] min-h-[68vh] w-full items-end overflow-hidden sm:items-center"
     >
       <div
         className="absolute inset-0 scale-105 bg-cover bg-center"

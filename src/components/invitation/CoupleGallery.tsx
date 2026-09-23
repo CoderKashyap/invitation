@@ -10,12 +10,21 @@ export function CoupleGallery({ data }: { data: Invitation }) {
     <section id="couple" className="relative px-5 py-20 sm:py-28">
       <div className="mx-auto max-w-5xl text-center">
         <p className="font-serif text-xs tracking-[0.4em] text-[#c81e4a] uppercase">
-          The couple
+          {data.greeting}
         </p>
         <h2 className="hero-names mt-3 text-5xl sm:text-6xl">
           {data.groom.firstName} & {data.bride.firstName}
         </h2>
         <LotusDivider />
+        <p className="mx-auto max-w-2xl font-serif text-lg leading-relaxed text-[#6b2040]">
+          {data.verse}
+        </p>
+        <p className="mt-3 font-serif text-sm italic text-[#9d174d]/85">
+          {data.blessing}
+        </p>
+        <p className="mt-5 font-serif text-xs tracking-[0.28em] text-[#c81e4a] uppercase">
+          {data.familiesLine}
+        </p>
         <div className="mt-4 grid gap-8 sm:grid-cols-2">
           <div>
             <p className="font-cinzel text-xl tracking-[0.2em] text-[#9d174d] uppercase">

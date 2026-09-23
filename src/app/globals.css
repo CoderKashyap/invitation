@@ -17,12 +17,21 @@
 
 html {
   scroll-behavior: smooth;
+  width: 100%;
 }
 
 body {
+  width: 100%;
+  max-width: 100%;
   background: #fffafb;
   color: #4a1530;
-  font-family: var(--font-cormorant), Georgia, serif;
+  font-family: var(--font-cormorant-family), Georgia, serif;
+}
+
+.invitation-page,
+.invitation-page main {
+  width: 100%;
+  max-width: 100%;
 }
 
 .invitation-page {
@@ -68,6 +77,8 @@ body {
 .opening-gate {
   position: fixed;
   inset: 0;
+  width: 100vw;
+  height: 100dvh;
   z-index: 80;
   overflow: hidden;
   background: #1a0c08;
@@ -293,6 +304,22 @@ body {
 @keyframes foil-shine {
   0% { background-position: 120% 0; }
   100% { background-position: -120% 0; }
+}
+
+.heart-bloom {
+  --petal-rot: 0deg;
+  animation: bloom-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes bloom-in {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.3) rotate(calc(var(--petal-rot) - 24deg));
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1) rotate(var(--petal-rot));
+  }
 }
 
 .scroll-chevron {

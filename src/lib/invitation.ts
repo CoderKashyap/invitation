@@ -34,6 +34,11 @@ export type Invitation = {
   familiesLine: string;
   verse: string;
   blessing: string;
+  gateCaption: string;
+  gateHint: string;
+  scratchKicker: string;
+  scratchTitle: string;
+  scratchHint: string;
   groom: CouplePerson;
   bride: CouplePerson;
   initials: string;
@@ -67,6 +72,11 @@ export const invitation: Invitation = {
   verse:
     "Two souls, one sacred promise, written in the stars, blessed by the divine, and sealed with love.",
   blessing: "May Ganeshji light the path, and may your blessings walk with us.",
+  gateCaption: "A wedding invitation awaits",
+  gateHint: "Tap the seal to open",
+  scratchKicker: "The auspicious day",
+  scratchTitle: "The wedding date",
+  scratchHint: "Tap the seal",
   groom: {
     firstName: "Aarav",
     fullName: "Aarav Kapoor",
@@ -192,3 +202,17 @@ export const invitation: Invitation = {
     address: "City Palace Complex, Udaipur, Rajasthan 313001",
   },
 };
+
+export function normalizeInvitation(content: Partial<Invitation> | Invitation): Invitation {
+  return {
+    ...invitation,
+    ...content,
+    groom: { ...invitation.groom, ...content.groom },
+    bride: { ...invitation.bride, ...content.bride },
+    wedding: { ...invitation.wedding, ...content.wedding },
+    coupleImages: content.coupleImages?.length ? content.coupleImages : invitation.coupleImages,
+    ceremonies: content.ceremonies?.length ? content.ceremonies : invitation.ceremonies,
+    rituals: content.rituals?.length ? content.rituals : invitation.rituals,
+    map: { ...invitation.map, ...content.map },
+  };
+}

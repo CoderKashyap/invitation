@@ -21,9 +21,8 @@ const script = Great_Vibes({
 });
 
 export const metadata: Metadata = {
-  title: "Aarav & Diya Wedding Invitation",
-  description:
-    "You are invited to celebrate the wedding of Aarav Kapoor and Diya Sharma.",
+  title: "Wedding Invitation Studio",
+  description: "Beautiful heart-scratch wedding invitations, made for each couple.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

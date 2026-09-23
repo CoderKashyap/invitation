@@ -5,9 +5,8 @@ import type { Invitation } from "@/lib/invitation";
 import { CeremonyChapters } from "./CeremonyChapters";
 import { CoupleGallery } from "./CoupleGallery";
 import { FlowerShower } from "./FlowerShower";
-import { HeroInvitation } from "./HeroInvitation";
+import { DateReveal } from "./DateReveal";
 import { OpeningGate } from "./OpeningGate";
-import { ScratchDate } from "./ScratchDate";
 import { InvitationFooter, VenueMap } from "./VenueFooter";
 
 export function InvitationExperience({ data }: { data: Invitation }) {
@@ -28,13 +27,12 @@ export function InvitationExperience({ data }: { data: Invitation }) {
   }, []);
 
   return (
-    <div className="invitation-page relative min-h-dvh">
+    <div className="invitation-page relative min-h-dvh w-full">
       <OpeningGate data={data} onComplete={() => setOpened(true)} />
       <FlowerShower active={opened} />
-      <main className={opened ? "relative z-10 opacity-100" : "relative z-10 opacity-0"}>
-        <HeroInvitation data={data} onScroll={scrollToCouple} />
+      <main className={opened ? "relative z-10 w-full opacity-100" : "relative z-10 w-full opacity-0"}>
+        <DateReveal data={data} onScroll={scrollToCouple} />
         <CoupleGallery data={data} />
-        <ScratchDate data={data} />
         <CeremonyChapters data={data} />
         <VenueMap data={data} />
         <InvitationFooter data={data} />
