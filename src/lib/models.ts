@@ -29,11 +29,6 @@ const InvitationSchema = new Schema(
   { collection: "invitations" },
 );
 
-InvitationSchema.pre("save", function (next) {
-  this.updatedAt = new Date();
-  next();
-});
-
 export type UserDoc = {
   id: string;
   email: string;
