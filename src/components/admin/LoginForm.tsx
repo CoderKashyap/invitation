@@ -50,10 +50,10 @@ export function LoginForm() {
       >
         {pending ? "Signing in…" : "Enter dashboard"}
       </button>
-      <p className="mt-6 font-serif text-xs leading-relaxed text-[#9d174d]/70">
+      {/* <p className="mt-6 font-serif text-xs leading-relaxed text-[#9d174d]/70">
         Seeded accounts: superadmin@invitation.local / SuperAdmin123! and
         admin@invitation.local / Admin123!
-      </p>
+      </p> */}
     </form>
   );
 }
