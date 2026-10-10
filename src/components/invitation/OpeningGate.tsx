@@ -1,8 +1,8 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Invitation } from "@/lib/invitation";
-import { OmMark } from "./Ornaments";
+import { LotusDivider, OmMark } from "./Ornaments";
 
 export function OpeningGate({
   data,
@@ -11,78 +11,128 @@ export function OpeningGate({
   data: Invitation;
   onComplete: () => void;
 }) {
-  const [opening, setOpening] = useState(false);
+  const [ready, setReady] = useState(false);
+  const [playing, setPlaying] = useState(false);
+  const [leaving, setLeaving] = useState(false);
   const [gone, setGone] = useState(false);
   const started = useRef(false);
+  const finishing = useRef(false);
+  const revealed = useRef(false);
+  const failsafe = useRef<number>(0);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
-  const open = () => {
-    if (started.current) return;
-    started.current = true;
-    setOpening(true);
-    window.setTimeout(() => {
-      onComplete();
-    }, 1650);
-    window.setTimeout(() => setGone(true), 2000);
+  const finish = () => {
+    if (finishing.current) return;
+    finishing.current = true;
+    window.clearTimeout(failsafe.current);
+    setLeaving(true);
+    onComplete();
+    window.setTimeout(() => setGone(true), 900);
   };
+
+  const revealVideo = () => {
+    if (revealed.current) return;
+    revealed.current = true;
+    setReady(true);
+  };
+
+  const playVideo = async () => {
+    const video = videoRef.current;
+    if (!video || started.current) return;
+    started.current = true;
+    revealVideo();
+    setPlaying(true);
+    try {
+      await video.play();
+      const duration = video.duration;
+      const waitMs =
+        duration && Number.isFinite(duration) ? (duration + 1.2) * 1000 : 20_000;
+      window.clearTimeout(failsafe.current);
+      failsafe.current = window.setTimeout(finish, waitMs);
+    } catch {
+      finish();
+    }
+  };
+
+  useEffect(() => {
+    if (!data.introVideo) {
+      onComplete();
+      setGone(true);
+      return;
+    }
+
+    const video = videoRef.current;
+    if (!video) return;
+
+    const onReady = () => revealVideo();
+    const onFail = () => finish();
+
+    video.addEventListener("loadedmetadata", onReady);
+    video.addEventListener("loadeddata", onReady);
+    video.addEventListener("canplay", onReady);
+    video.addEventListener("canplaythrough", onReady);
+    video.addEventListener("ended", finish);
+    video.addEventListener("error", onFail);
+
+    if (video.readyState >= 1) onReady();
+    video.load();
+
+    const timeout = window.setTimeout(onReady, 1200);
+
+    return () => {
+      window.clearTimeout(timeout);
+      window.clearTimeout(failsafe.current);
+      video.removeEventListener("loadedmetadata", onReady);
+      video.removeEventListener("loadeddata", onReady);
+      video.removeEventListener("canplay", onReady);
+      video.removeEventListener("canplaythrough", onReady);
+      video.removeEventListener("ended", finish);
+      video.removeEventListener("error", onFail);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data.introVideo]);
 
   if (gone) return null;
 
   return (
     <div
-      className={`opening-gate ${opening ? "is-opening" : ""}`}
+      className={`opening-gate ${leaving ? "is-opening" : ""}`}
       role="dialog"
-      aria-label="Open wedding invitation"
+      aria-label="Wedding invitation opening"
     >
-      <div className="door-stage">
-        <div className="door door-left">
-          <div
-            className="door-skin"
-            style={{ backgroundImage: `url(${data.doorImage})` }}
-          />
-        </div>
-        <div className="door door-right">
-          <div
-            className="door-skin door-skin-right"
-            style={{ backgroundImage: `url(${data.doorImage})` }}
-          />
-        </div>
-      </div>
+      {data.introVideo ? (
+        <video
+          ref={videoRef}
+          className="intro-video is-visible"
+          src={data.introVideo}
+          playsInline
+          preload="auto"
+          onTimeUpdate={() => {
+            const video = videoRef.current;
+            if (!video?.duration || !Number.isFinite(video.duration)) return;
+            if (video.currentTime >= video.duration - 0.08) finish();
+          }}
+        />
+      ) : null}
 
-      <div className="relative z-20 flex min-h-full flex-col items-center justify-center px-4">
-        <p className="envelope-caption mb-7">
-          {data.gateCaption}
-        </p>
+      {data.introVideo && !ready && !playing ? (
+        <div className="intro-hold">
+          <OmMark className="text-3xl" />
+          <p className="hero-names mt-5 text-6xl sm:text-8xl">
+            {data.groom.firstName} & {data.bride.firstName}
+          </p>
+          <LotusDivider />
+        </div>
+      ) : null}
 
+      {data.introVideo && ready && !playing ? (
         <button
           type="button"
-          onClick={open}
-          className={`envelope ${opening ? "is-open" : ""}`}
-          aria-label="Open envelope"
-        >
-          <span className="envelope-shadow" />
-          <span className="envelope-body" />
-          <span className="envelope-pocket" />
-          <span className="envelope-letter">
-            <OmMark className="text-2xl" />
-            <span className="font-script text-3xl text-[#be185d]">
-              {data.groom.firstName} & {data.bride.firstName}
-            </span>
-            <span className="mt-1 font-serif text-[10px] tracking-[0.3em] text-[#9d174d] uppercase">
-              Request the pleasure
-            </span>
-          </span>
-          <span className="envelope-flap" />
-          <span className={`wax-seal ${opening ? "is-broken" : ""}`}>
-            <span className="font-cinzel text-sm tracking-widest text-[#ffe4ec]">
-              {data.initials}
-            </span>
-          </span>
-        </button>
-
-        <p className="envelope-caption mt-8">
-          {opening ? "Opening…" : data.gateHint}
-        </p>
-      </div>
+          className="intro-play-hit"
+          onClick={() => void playVideo()}
+          aria-label="Play opening video"
+        />
+      ) : null}
     </div>
   );
 }

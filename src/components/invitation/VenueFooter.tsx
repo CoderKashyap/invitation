@@ -1,7 +1,7 @@
 "use client";
 
 import type { Invitation } from "@/lib/invitation";
-import { LotusDivider, OmMark } from "./Ornaments";
+import { LotusDivider } from "./Ornaments";
 
 export function VenueMap({ data }: { data: Invitation }) {
   const src = `https://maps.google.com/maps?q=${encodeURIComponent(data.map.query)}&z=15&output=embed`;
@@ -49,9 +49,8 @@ export function VenueMap({ data }: { data: Invitation }) {
 
 export function InvitationFooter({ data }: { data: Invitation }) {
   return (
-    <footer className="relative z-20 overflow-hidden border-t border-[#f9a8d4] bg-[linear-gradient(180deg,#fffafb,#ffe4ec)] px-5 py-16 pb-24 text-center">
+    <footer className="relative z-20 overflow-hidden border-t border-[#f9a8d4] bg-[linear-gradient(180deg,#fffafb,#ffe4ec)] px-5 py-16 text-center">
       <div className="pointer-events-none absolute top-0 right-8 left-8 h-px bg-linear-to-r from-transparent via-[#f472b6] to-transparent" />
-      <OmMark />
       <LotusDivider />
       <p className="font-script text-4xl text-[#c81e4a] sm:text-5xl">
         We request the pleasure of your company
@@ -72,5 +71,28 @@ export function InvitationFooter({ data }: { data: Invitation }) {
         A wedding invitation
       </p>
     </footer>
+  );
+}
+
+export function BrandingBar({ data }: { data: Invitation }) {
+  if (data.showBranding === false) return null;
+
+  return (
+    <div className="relative z-30 border-t border-[#f9a8d4] bg-[#9d174d] px-5 py-2.5 text-center">
+      <p className="font-serif text-[11px] tracking-[0.18em] text-[#ffe4ec] uppercase">
+        {data.brandingText || "Crafted with Invitation Studio"}
+        {data.contactNumber ? (
+          <>
+            <span className="mx-2 text-[#fda4af]">·</span>
+            <a
+              href={`tel:${data.contactNumber.replace(/\s+/g, "")}`}
+              className="tracking-normal normal-case text-[#ffe4ec]"
+            >
+              {data.contactNumber}
+            </a>
+          </>
+        ) : null}
+      </p>
+    </div>
   );
 }

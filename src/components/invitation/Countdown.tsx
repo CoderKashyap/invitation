@@ -7,7 +7,15 @@ function pad(n: number) {
   return String(n).padStart(2, "0");
 }
 
-export function Countdown({ iso, visible }: { iso: string; visible: boolean }) {
+export function Countdown({
+  iso,
+  visible,
+  compact = false,
+}: {
+  iso: string;
+  visible: boolean;
+  compact?: boolean;
+}) {
   const [now, setNow] = useState(0);
 
   useEffect(() => {
@@ -34,18 +42,30 @@ export function Countdown({ iso, visible }: { iso: string; visible: boolean }) {
 
   return (
     <div
-      className={`grid grid-cols-4 gap-2 overflow-hidden sm:gap-4 transition-all duration-700 ${
+      className={`grid grid-cols-4 overflow-hidden transition-all duration-700 ${
+        compact ? "gap-1.5 sm:gap-2" : "gap-2 sm:gap-4"
+      } ${
         visible
-          ? "mt-10 max-h-40 translate-y-0 opacity-100"
+          ? compact
+            ? "mt-4 max-h-28 translate-y-0 opacity-100"
+            : "mt-10 max-h-40 translate-y-0 opacity-100"
           : "pointer-events-none mt-0 max-h-0 translate-y-6 opacity-0"
       }`}
     >
       {units.map((unit) => (
         <div
           key={unit.label}
-          className="rounded-2xl border border-[#f9a8d4] bg-white px-1 py-4 text-center shadow-[0_10px_28px_rgba(225,29,72,0.1)] sm:px-3"
+          className={`border border-[#f9a8d4] bg-white text-center shadow-[0_10px_28px_rgba(225,29,72,0.1)] ${
+            compact
+              ? "rounded-xl px-1 py-2 sm:px-2"
+              : "rounded-2xl px-1 py-4 sm:px-3"
+          }`}
         >
-          <p className="font-cinzel text-2xl text-[#c81e4a] sm:text-4xl">
+          <p
+            className={`font-cinzel text-[#c81e4a] ${
+              compact ? "text-xl sm:text-2xl" : "text-2xl sm:text-4xl"
+            }`}
+          >
             {pad(unit.value)}
           </p>
           <p className="mt-1 font-serif text-[10px] tracking-[0.2em] text-[#9d174d]/80 uppercase sm:text-xs">

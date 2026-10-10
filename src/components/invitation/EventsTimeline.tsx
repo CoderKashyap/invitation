@@ -9,6 +9,7 @@ const THEME_DOT: Record<string, string> = {
   mehendi: "bg-[#7dce8a]",
   sangeet: "bg-[#c4a0ff]",
   wedding: "bg-[#f4a5b8]",
+  reception: "bg-[#fcd34d]",
 };
 
 export function EventsTimeline({ data }: { data: Invitation }) {
@@ -38,7 +39,7 @@ export function EventsTimeline({ data }: { data: Invitation }) {
             }`}
           >
             <span
-              className={`absolute top-2 left-[9px] z-10 h-3.5 w-3.5 rounded-full ring-4 ring-[#2a0818] sm:left-1/2 sm:-translate-x-1/2 ${THEME_DOT[event.theme]}`}
+              className={`absolute top-2 left-[9px] z-10 h-3.5 w-3.5 rounded-full ring-4 ring-[#2a0818] sm:left-1/2 sm:-translate-x-1/2 ${THEME_DOT[event.theme] ?? "bg-[#f4a5b8]"}`}
             />
             <div className="ml-10 flex-1 sm:ml-0 sm:w-[calc(50%-28px)] sm:flex-none">
               <article className="rounded-3xl border border-[#f4a5b8]/25 bg-[#5c1a38]/55 p-5 text-left shadow-[0_16px_40px_rgba(0,0,0,0.2)] backdrop-blur-sm">

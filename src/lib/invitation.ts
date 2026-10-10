@@ -10,8 +10,10 @@ export type CoupleImage = {
   caption: string;
 };
 
+export type CeremonyTheme = "haldi" | "mehendi" | "sangeet" | "wedding" | "reception";
+
 export type Ceremony = {
-  id: "haldi" | "mehendi" | "sangeet" | "wedding";
+  id: string;
   kicker: string;
   title: string;
   poem: string;
@@ -19,13 +21,21 @@ export type Ceremony = {
   time: string;
   venue: string;
   image: string;
-  theme: "haldi" | "mehendi" | "sangeet" | "wedding";
+  theme: CeremonyTheme;
+  showContent: boolean;
 };
 
 export type Ritual = {
   name: string;
   time: string;
   note: string;
+};
+
+export type ScratchCard = {
+  id: string;
+  label: string;
+  revealTitle: string;
+  revealDetail: string;
 };
 
 export type Invitation = {
@@ -36,9 +46,13 @@ export type Invitation = {
   blessing: string;
   gateCaption: string;
   gateHint: string;
+  introVideo: string;
+  welcomeImage: string;
   scratchKicker: string;
   scratchTitle: string;
   scratchHint: string;
+  scratchUseTheme: boolean;
+  scratchBackground: string;
   groom: CouplePerson;
   bride: CouplePerson;
   initials: string;
@@ -55,14 +69,22 @@ export type Invitation = {
   };
   heroImage: string;
   doorImage: string;
+  showGallery: boolean;
+  showCoupleIntro: boolean;
+  coupleIntroImage: string;
   coupleImages: CoupleImage[];
   ceremonies: Ceremony[];
   rituals: Ritual[];
+  scratchCards: ScratchCard[];
   map: {
     query: string;
     label: string;
     address: string;
   };
+  showBranding: boolean;
+  brandingText: string;
+  contactNumber: string;
+  backgroundAudio: string;
 };
 
 export const invitation: Invitation = {
@@ -73,10 +95,14 @@ export const invitation: Invitation = {
     "Two souls, one sacred promise, written in the stars, blessed by the divine, and sealed with love.",
   blessing: "May Ganeshji light the path, and may your blessings walk with us.",
   gateCaption: "A wedding invitation awaits",
-  gateHint: "Tap the seal to open",
+  gateHint: "Tap to begin",
+  introVideo: "",
+  welcomeImage: "",
   scratchKicker: "The auspicious day",
   scratchTitle: "The wedding date",
   scratchHint: "Tap the seal",
+  scratchUseTheme: false,
+  scratchBackground: "",
   groom: {
     firstName: "Aarav",
     fullName: "Aarav Kapoor",
@@ -101,6 +127,9 @@ export const invitation: Invitation = {
   },
   heroImage: "/images/hero-fullscreen.png",
   doorImage: "/images/palace-doors.png",
+  showGallery: true,
+  showCoupleIntro: true,
+  coupleIntroImage: "",
   coupleImages: [
     {
       src: "/images/couple-hero.png",
@@ -134,6 +163,7 @@ export const invitation: Invitation = {
       venue: "The Garden Pavilion",
       image: "/images/haldi-ceremony.png",
       theme: "haldi",
+      showContent: true,
     },
     {
       id: "mehendi",
@@ -145,6 +175,7 @@ export const invitation: Invitation = {
       venue: "The Courtyard Lawns",
       image: "/images/mehendi-ceremony.png",
       theme: "mehendi",
+      showContent: true,
     },
     {
       id: "sangeet",
@@ -156,6 +187,7 @@ export const invitation: Invitation = {
       venue: "The Royal Ballroom",
       image: "/images/sangeet-celebration.png",
       theme: "sangeet",
+      showContent: true,
     },
     {
       id: "wedding",
@@ -167,6 +199,27 @@ export const invitation: Invitation = {
       venue: "The Royal Palace, Udaipur",
       image: "/images/wedding-ceremony.png",
       theme: "wedding",
+      showContent: true,
+    },
+  ],
+  scratchCards: [
+    {
+      id: "date",
+      label: "The wedding date",
+      revealTitle: "Saturday, 12 December 2026",
+      revealDetail: "Save this auspicious day with us.",
+    },
+    {
+      id: "time",
+      label: "The hour",
+      revealTitle: "5:00 in the evening",
+      revealDetail: "The celebrations begin thereafter.",
+    },
+    {
+      id: "venue",
+      label: "The venue",
+      revealTitle: "The Royal Palace",
+      revealDetail: "Udaipur",
     },
   ],
   rituals: [
@@ -201,18 +254,43 @@ export const invitation: Invitation = {
     label: "The Royal Palace",
     address: "City Palace Complex, Udaipur, Rajasthan 313001",
   },
+  showBranding: true,
+  brandingText: "Crafted with Invitation Studio",
+  contactNumber: "",
+  backgroundAudio: "",
 };
 
 export function normalizeInvitation(content: Partial<Invitation> | Invitation): Invitation {
   return {
     ...invitation,
     ...content,
+    introVideo: content.introVideo ?? invitation.introVideo,
+    welcomeImage: content.welcomeImage ?? invitation.welcomeImage,
+    showGallery: content.showGallery ?? invitation.showGallery,
+    showCoupleIntro: content.showCoupleIntro ?? invitation.showCoupleIntro,
+    coupleIntroImage: content.coupleIntroImage ?? invitation.coupleIntroImage,
+    scratchUseTheme: content.scratchUseTheme ?? invitation.scratchUseTheme,
+    scratchBackground: content.scratchBackground ?? invitation.scratchBackground,
+    showBranding: content.showBranding ?? invitation.showBranding,
+    brandingText: content.brandingText ?? invitation.brandingText,
+    contactNumber: content.contactNumber ?? invitation.contactNumber,
+    backgroundAudio: content.backgroundAudio ?? invitation.backgroundAudio,
     groom: { ...invitation.groom, ...content.groom },
     bride: { ...invitation.bride, ...content.bride },
     wedding: { ...invitation.wedding, ...content.wedding },
-    coupleImages: content.coupleImages?.length ? content.coupleImages : invitation.coupleImages,
-    ceremonies: content.ceremonies?.length ? content.ceremonies : invitation.ceremonies,
-    rituals: content.rituals?.length ? content.rituals : invitation.rituals,
+    coupleImages: Array.isArray(content.coupleImages)
+      ? content.coupleImages
+      : invitation.coupleImages,
+    ceremonies: (Array.isArray(content.ceremonies) ? content.ceremonies : invitation.ceremonies).map(
+      (ceremony) => ({
+        ...ceremony,
+        showContent: ceremony.showContent !== false,
+      }),
+    ),
+    rituals: Array.isArray(content.rituals) ? content.rituals : invitation.rituals,
+    scratchCards: Array.isArray(content.scratchCards)
+      ? content.scratchCards
+      : invitation.scratchCards,
     map: { ...invitation.map, ...content.map },
   };
 }
