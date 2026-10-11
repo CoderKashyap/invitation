@@ -1,10 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { createContext, useContext, useState } from "react";
 import Link from "next/link";
+import { upload } from "@vercel/blob/client";
 import { saveInvitationAction } from "@/lib/actions";
 import type { Ceremony, CeremonyTheme, Invitation } from "@/lib/invitation";
 import type { InvitationRecord } from "@/lib/types";
+import { uploadRejection, type UploadKind, type UploadMode } from "@/lib/uploads";
+
+const UploadModeContext = createContext<UploadMode>("local");
 
 function Field({
   label,
@@ -24,11 +28,54 @@ function Field({
 const inputClass =
   "w-full rounded-2xl border border-[#f9a8d4] px-4 py-3 text-[#4a1530] outline-none focus:border-[#e11d48]";
 
-async function uploadFile(file: File) {
+async function uploadFile(file: File, kind: UploadKind, mode: UploadMode) {
+  const rejection = uploadRejection(file, kind);
+  if (rejection) throw new Error(rejection);
+
+  if (mode === "unavailable") {
+    throw new Error(
+      "This live site cannot store files on its own disk. In Vercel, open Storage, create a Blob store for this project, then redeploy.",
+    );
+  }
+
+  if (mode === "blob") {
+    const safeName = file.name.replace(/[^\w.-]+/g, "-").replace(/^-+/, "").slice(-80) || "file";
+    try {
+      const blob = await upload(`uploads/${safeName}`, file, {
+        access: "public",
+        handleUploadUrl: "/api/upload",
+        contentType: file.type,
+        clientPayload: JSON.stringify({ kind }),
+      });
+      return blob.url;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "";
+      if (message.toLowerCase().includes("client token")) {
+        throw new Error(
+          "Upload could not start. Connect a Vercel Blob store to this project, then redeploy.",
+        );
+      }
+      throw error instanceof Error ? error : new Error("Upload failed");
+    }
+  }
+
   const body = new FormData();
   body.set("file", file);
   const res = await fetch("/api/upload", { method: "POST", body });
-  const json = (await res.json()) as { url?: string; error?: string };
+  const text = await res.text();
+  if (!text) {
+    throw new Error(
+      res.status === 413
+        ? "This file is too large to upload through the server."
+        : "Upload failed before the server could respond.",
+    );
+  }
+  let json: { url?: string; error?: string };
+  try {
+    json = JSON.parse(text) as { url?: string; error?: string };
+  } catch {
+    throw new Error("Upload failed. The server returned an unexpected response.");
+  }
   if (!res.ok || !json.url) throw new Error(json.error || "Upload failed");
   return json.url;
 }
@@ -43,6 +90,7 @@ function ImageField({
   onChange: (url: string) => void;
 }) {
   const [busy, setBusy] = useState(false);
+  const mode = useContext(UploadModeContext);
   return (
     <div className="rounded-2xl border border-[#fde4ea] bg-[#fffafb] p-4">
       <p className="font-serif text-sm text-[#6b2040]">{label}</p>
@@ -66,7 +114,7 @@ function ImageField({
             if (!file) return;
             setBusy(true);
             try {
-              onChange(await uploadFile(file));
+              onChange(await uploadFile(file, "image", mode));
             } catch (error) {
               window.alert(error instanceof Error ? error.message : "Upload failed");
             } finally {
@@ -90,6 +138,7 @@ function VideoField({
   onChange: (url: string) => void;
 }) {
   const [busy, setBusy] = useState(false);
+  const mode = useContext(UploadModeContext);
   return (
     <div className="rounded-2xl border border-[#fde4ea] bg-[#fffafb] p-4">
       <p className="font-serif text-sm text-[#6b2040]">{label}</p>
@@ -124,7 +173,7 @@ function VideoField({
               if (!file) return;
               setBusy(true);
               try {
-                onChange(await uploadFile(file));
+                onChange(await uploadFile(file, "video", mode));
               } catch (error) {
                 window.alert(error instanceof Error ? error.message : "Upload failed");
               } finally {
@@ -158,6 +207,7 @@ function AudioField({
   onChange: (url: string) => void;
 }) {
   const [busy, setBusy] = useState(false);
+  const mode = useContext(UploadModeContext);
   return (
     <div className="rounded-2xl border border-[#fde4ea] bg-[#fffafb] p-4">
       <p className="font-serif text-sm text-[#6b2040]">{label}</p>
@@ -186,7 +236,7 @@ function AudioField({
               if (!file) return;
               setBusy(true);
               try {
-                onChange(await uploadFile(file));
+                onChange(await uploadFile(file, "audio", mode));
               } catch (error) {
                 window.alert(error instanceof Error ? error.message : "Upload failed");
               } finally {
@@ -233,7 +283,13 @@ function blankEvent(): Ceremony {
   };
 }
 
-export function InvitationEditor({ record }: { record: InvitationRecord }) {
+export function InvitationEditor({
+  record,
+  uploadMode,
+}: {
+  record: InvitationRecord;
+  uploadMode: UploadMode;
+}) {
   const [title, setTitle] = useState(record.title);
   const [slug, setSlug] = useState(record.slug);
   const [published, setPublished] = useState(record.published);
@@ -263,6 +319,7 @@ export function InvitationEditor({ record }: { record: InvitationRecord }) {
   };
 
   return (
+    <UploadModeContext.Provider value={uploadMode}>
     <div className="space-y-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
@@ -963,5 +1020,6 @@ export function InvitationEditor({ record }: { record: InvitationRecord }) {
         </button>
       </div>
     </div>
+    </UploadModeContext.Provider>
   );
 }

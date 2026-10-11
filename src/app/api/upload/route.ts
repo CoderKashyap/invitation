@@ -1,15 +1,18 @@
 import { randomUUID } from "crypto";
 import { promises as fs } from "fs";
 import path from "path";
+import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
+import {
+  readUploadKind,
+  uploadContentTypes,
+  uploadLimit,
+  uploadRejection,
+} from "@/lib/uploads";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
-
-const IMAGES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
-const VIDEOS = new Set(["video/mp4", "video/webm", "video/quicktime"]);
-const AUDIOS = new Set(["audio/mpeg", "audio/mp3", "audio/wav", "audio/ogg", "audio/aac", "audio/mp4", "audio/webm"]);
 
 function extensionFor(type: string) {
   if (type === "image/jpeg") return "jpg";
@@ -18,47 +21,86 @@ function extensionFor(type: string) {
   return type.split("/")[1] || "bin";
 }
 
-export async function POST(request: Request) {
+async function handleBlobUpload(request: Request) {
+  let body: HandleUploadBody;
+  try {
+    body = (await request.json()) as HandleUploadBody;
+  } catch {
+    return NextResponse.json({ error: "Invalid upload request." }, { status: 400 });
+  }
+
+  try {
+    const jsonResponse = await handleUpload({
+      body,
+      request,
+      onBeforeGenerateToken: async (_pathname, clientPayload) => {
+        const session = await getSession();
+        if (!session) throw new Error("Unauthorized");
+        const kind = readUploadKind(clientPayload);
+        return {
+          allowedContentTypes: uploadContentTypes(kind),
+          maximumSizeInBytes: uploadLimit(kind),
+          addRandomSuffix: true,
+        };
+      },
+    });
+    return NextResponse.json(jsonResponse);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Upload failed";
+    const status = message === "Unauthorized" ? 401 : 400;
+    return NextResponse.json({ error: message }, { status });
+  }
+}
+
+async function handleLocalUpload(request: Request) {
   const session = await getSession();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  if (process.env.VERCEL) {
+    return NextResponse.json(
+      {
+        error:
+          "This live site cannot store files on its own disk. In Vercel, open Storage, create a Blob store for this project, then redeploy.",
+      },
+      { status: 500 },
+    );
+  }
+
   const form = await request.formData();
   const file = form.get("file");
-  if (!(file instanceof File) || file.size === 0) {
+  if (!(file instanceof File)) {
     return NextResponse.json({ error: "Please choose a file." }, { status: 400 });
   }
 
-  const isImage = IMAGES.has(file.type);
-  const isVideo = VIDEOS.has(file.type);
-  const isAudio = AUDIOS.has(file.type);
-  if (!isImage && !isVideo && !isAudio) {
-    return NextResponse.json(
-      { error: "Use an image, MP4 / WEBM / MOV video, or an MP3 / WAV / OGG audio file." },
-      { status: 400 },
-    );
-  }
-
-  const limit = isVideo ? 40 * 1024 * 1024 : isAudio ? 15 * 1024 * 1024 : 8 * 1024 * 1024;
-  if (file.size > limit) {
-    return NextResponse.json(
-      {
-        error: isVideo
-          ? "Videos must be under 40MB."
-          : isAudio
-            ? "Audio must be under 15MB."
-            : "Images must be under 8MB.",
-      },
-      { status: 400 },
-    );
+  const kind = file.type.startsWith("video/")
+    ? "video"
+    : file.type.startsWith("audio/")
+      ? "audio"
+      : "image";
+  const rejection = uploadRejection(file, kind);
+  if (rejection) {
+    return NextResponse.json({ error: rejection }, { status: 400 });
   }
 
   const name = `${randomUUID()}.${extensionFor(file.type)}`;
   const dir = path.join(process.cwd(), "public", "uploads");
-  await fs.mkdir(dir, { recursive: true });
-  const buffer = Buffer.from(await file.arrayBuffer());
-  await fs.writeFile(path.join(dir, name), buffer);
+  try {
+    await fs.mkdir(dir, { recursive: true });
+    await fs.writeFile(path.join(dir, name), Buffer.from(await file.arrayBuffer()));
+  } catch {
+    return NextResponse.json(
+      { error: "The server could not save this file." },
+      { status: 500 },
+    );
+  }
 
   return NextResponse.json({ url: `/uploads/${name}` });
+}
+
+export async function POST(request: Request) {
+  const contentType = request.headers.get("content-type") || "";
+  if (contentType.includes("application/json")) return handleBlobUpload(request);
+  return handleLocalUpload(request);
 }
