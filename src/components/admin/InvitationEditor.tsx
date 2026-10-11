@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState } from "react";
 import Link from "next/link";
-import { upload } from "@vercel/blob/client";
+import { uploadFileToBlob } from "@/lib/blob-browser";
 import { saveInvitationAction } from "@/lib/actions";
 import type { Ceremony, CeremonyTheme, Invitation } from "@/lib/invitation";
 import type { InvitationRecord } from "@/lib/types";
@@ -28,7 +28,18 @@ function Field({
 const inputClass =
   "w-full rounded-2xl border border-[#f9a8d4] px-4 py-3 text-[#4a1530] outline-none focus:border-[#e11d48]";
 
-async function uploadFile(file: File, kind: UploadKind, mode: UploadMode) {
+function uploadLabel(idle: string, progress: number | null) {
+  if (progress === null) return idle;
+  if (progress <= 0) return "Uploading…";
+  return `Uploading ${progress}%`;
+}
+
+async function uploadFile(
+  file: File,
+  kind: UploadKind,
+  mode: UploadMode,
+  onProgress: (percent: number) => void,
+) {
   const rejection = uploadRejection(file, kind);
   if (rejection) throw new Error(rejection);
 
@@ -38,26 +49,7 @@ async function uploadFile(file: File, kind: UploadKind, mode: UploadMode) {
     );
   }
 
-  if (mode === "blob") {
-    const safeName = file.name.replace(/[^\w.-]+/g, "-").replace(/^-+/, "").slice(-80) || "file";
-    try {
-      const blob = await upload(`uploads/${safeName}`, file, {
-        access: "public",
-        handleUploadUrl: "/api/upload",
-        contentType: file.type,
-        clientPayload: JSON.stringify({ kind }),
-      });
-      return blob.url;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "";
-      if (message.toLowerCase().includes("client token")) {
-        throw new Error(
-          "Upload could not start. Connect a Vercel Blob store to this project, then redeploy.",
-        );
-      }
-      throw error instanceof Error ? error : new Error("Upload failed");
-    }
-  }
+  if (mode === "blob") return uploadFileToBlob(file, kind, onProgress);
 
   const body = new FormData();
   body.set("file", file);
@@ -89,7 +81,7 @@ function ImageField({
   value: string;
   onChange: (url: string) => void;
 }) {
-  const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState<number | null>(null);
   const mode = useContext(UploadModeContext);
   return (
     <div className="rounded-2xl border border-[#fde4ea] bg-[#fffafb] p-4">
@@ -104,21 +96,22 @@ function ImageField({
         className={`${inputClass} mt-3`}
       />
       <label className="mt-3 inline-block cursor-pointer rounded-full bg-white px-4 py-2 font-serif text-xs tracking-[0.16em] text-[#c81e4a] uppercase ring-1 ring-[#f9a8d4]">
-        {busy ? "Uploading…" : "Upload image"}
+        {uploadLabel("Upload image", progress)}
         <input
           type="file"
           accept="image/*"
           className="hidden"
+          disabled={progress !== null}
           onChange={async (e) => {
             const file = e.target.files?.[0];
             if (!file) return;
-            setBusy(true);
+            setProgress(0);
             try {
-              onChange(await uploadFile(file, "image", mode));
+              onChange(await uploadFile(file, "image", mode, setProgress));
             } catch (error) {
               window.alert(error instanceof Error ? error.message : "Upload failed");
             } finally {
-              setBusy(false);
+              setProgress(null);
               e.target.value = "";
             }
           }}
@@ -137,7 +130,7 @@ function VideoField({
   value: string;
   onChange: (url: string) => void;
 }) {
-  const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState<number | null>(null);
   const mode = useContext(UploadModeContext);
   return (
     <div className="rounded-2xl border border-[#fde4ea] bg-[#fffafb] p-4">
@@ -163,21 +156,22 @@ function VideoField({
       />
       <div className="mt-3 flex flex-wrap gap-3">
         <label className="inline-block cursor-pointer rounded-full bg-white px-4 py-2 font-serif text-xs tracking-[0.16em] text-[#c81e4a] uppercase ring-1 ring-[#f9a8d4]">
-          {busy ? "Uploading…" : "Upload video"}
+          {uploadLabel("Upload video", progress)}
           <input
             type="file"
             accept="video/mp4,video/webm,video/quicktime"
             className="hidden"
+            disabled={progress !== null}
             onChange={async (e) => {
               const file = e.target.files?.[0];
               if (!file) return;
-              setBusy(true);
+              setProgress(0);
               try {
-                onChange(await uploadFile(file, "video", mode));
+                onChange(await uploadFile(file, "video", mode, setProgress));
               } catch (error) {
                 window.alert(error instanceof Error ? error.message : "Upload failed");
               } finally {
-                setBusy(false);
+                setProgress(null);
                 e.target.value = "";
               }
             }}
@@ -206,7 +200,7 @@ function AudioField({
   value: string;
   onChange: (url: string) => void;
 }) {
-  const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState<number | null>(null);
   const mode = useContext(UploadModeContext);
   return (
     <div className="rounded-2xl border border-[#fde4ea] bg-[#fffafb] p-4">
@@ -226,21 +220,22 @@ function AudioField({
       />
       <div className="mt-3 flex flex-wrap gap-3">
         <label className="inline-block cursor-pointer rounded-full bg-white px-4 py-2 font-serif text-xs tracking-[0.16em] text-[#c81e4a] uppercase ring-1 ring-[#f9a8d4]">
-          {busy ? "Uploading…" : "Upload audio"}
+          {uploadLabel("Upload audio", progress)}
           <input
             type="file"
             accept="audio/mpeg,audio/mp3,audio/wav,audio/ogg,audio/aac"
             className="hidden"
+            disabled={progress !== null}
             onChange={async (e) => {
               const file = e.target.files?.[0];
               if (!file) return;
-              setBusy(true);
+              setProgress(0);
               try {
-                onChange(await uploadFile(file, "audio", mode));
+                onChange(await uploadFile(file, "audio", mode, setProgress));
               } catch (error) {
                 window.alert(error instanceof Error ? error.message : "Upload failed");
               } finally {
-                setBusy(false);
+                setProgress(null);
                 e.target.value = "";
               }
             }}
