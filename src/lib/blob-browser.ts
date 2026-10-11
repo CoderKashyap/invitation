@@ -1,87 +1,128 @@
 import type { UploadKind } from "@/lib/uploads";
 
-const BLOB_API = "https://vercel.com/api/blob/";
-const STALL_MS = 90_000;
+const PART_SIZE = 8 * 1024 * 1024;
+const MULTIPART_AFTER = 5 * 1024 * 1024;
 
-function blobErrorMessage(body: string, status: number) {
-  try {
-    const data = JSON.parse(body) as { error?: string | { message?: string } };
-    if (typeof data.error === "string" && data.error) return data.error;
-    if (data.error && typeof data.error === "object" && data.error.message) return data.error.message;
-  } catch {
-    // The body was not JSON.
-  }
-  if (status === 413) return "This file is too large to upload.";
-  return "Upload failed.";
-}
+type BlobJson = {
+  url?: string;
+  key?: string;
+  uploadId?: string;
+  etag?: string;
+  error?: string | { message?: string };
+};
 
-function putBlob(file: File, pathname: string, clientToken: string, onProgress: (percent: number) => void) {
+function storeIdFromToken(clientToken: string) {
   const storeId = clientToken.split("_")[3] ?? "";
   if (!storeId) throw new Error("Upload could not start.");
+  return storeId;
+}
 
-  const endpoint = new URL(BLOB_API);
-  endpoint.searchParams.set("pathname", pathname);
+function errorFromBody(data: BlobJson, status: number) {
+  if (typeof data.error === "string" && data.error) return data.error;
+  if (data.error && typeof data.error === "object" && data.error.message) return data.error.message;
+  if (status === 413) return "This file is too large to upload.";
+  return `Upload failed (${status}).`;
+}
 
-  return new Promise<string>((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    let settled = false;
-    let lastProgress = Date.now();
+async function blobRequest(
+  apiPath: string,
+  clientToken: string,
+  fileType: string,
+  init: RequestInit,
+) {
+  const storeId = storeIdFromToken(clientToken);
+  let response: Response;
+  try {
+    response = await fetch(`https://vercel.com/api/blob${apiPath}`, {
+      ...init,
+      headers: {
+        authorization: `Bearer ${clientToken}`,
+        "x-api-version": "12",
+        "x-api-blob-request-attempt": "0",
+        "x-api-blob-request-id": `${storeId}:${Date.now()}:${Math.random().toString(16).slice(2)}`,
+        "x-vercel-blob-store-id": storeId,
+        "x-vercel-blob-access": "public",
+        "x-content-type": fileType,
+        ...(init.headers as Record<string, string> | undefined),
+      },
+    });
+  } catch {
+    throw new Error("Upload failed. Check your connection and try again.");
+  }
 
-    const finish = (error?: Error, url?: string) => {
-      if (settled) return;
-      settled = true;
-      window.clearInterval(watchdog);
-      if (error) reject(error);
-      else resolve(url || "");
-    };
+  const text = await response.text();
+  let data: BlobJson = {};
+  try {
+    data = text ? (JSON.parse(text) as BlobJson) : {};
+  } catch {
+    if (!response.ok) throw new Error(errorFromBody({}, response.status));
+    throw new Error("Upload finished with an unexpected response.");
+  }
+  if (!response.ok) throw new Error(errorFromBody(data, response.status));
+  return data;
+}
 
-    const watchdog = window.setInterval(() => {
-      if (Date.now() - lastProgress < STALL_MS) return;
-      xhr.abort();
-      finish(new Error("Upload stalled. Check your connection and try a smaller file."));
-    }, 5000);
-
-    xhr.open("PUT", endpoint.toString());
-    xhr.setRequestHeader("authorization", `Bearer ${clientToken}`);
-    xhr.setRequestHeader("x-api-version", "12");
-    xhr.setRequestHeader("x-api-blob-request-attempt", "0");
-    xhr.setRequestHeader("x-vercel-blob-store-id", storeId);
-    xhr.setRequestHeader("x-vercel-blob-access", "public");
-    xhr.setRequestHeader("x-content-type", file.type);
-    xhr.setRequestHeader("x-content-length", String(file.size));
-    xhr.upload.onprogress = (event) => {
-      lastProgress = Date.now();
-      if (!event.lengthComputable || event.total <= 0) return;
-      onProgress(Math.max(1, Math.min(99, Math.round((event.loaded / event.total) * 100))));
-    };
-    xhr.onload = () => {
-      if (xhr.status < 200 || xhr.status >= 300) {
-        finish(new Error(blobErrorMessage(xhr.responseText, xhr.status)));
-        return;
-      }
-      try {
-        const data = JSON.parse(xhr.responseText) as { url?: string };
-        if (!data.url) {
-          finish(new Error("Upload finished without a file address."));
-          return;
-        }
-        onProgress(100);
-        finish(undefined, data.url);
-      } catch {
-        finish(new Error("Upload finished with an unexpected response."));
-      }
-    };
-    xhr.onerror = () => finish(new Error("Upload failed. Check your connection and try again."));
-    xhr.onabort = () => {
-      if (!settled) finish(new Error("Upload stalled. Check your connection and try a smaller file."));
-    };
-    xhr.send(file);
+async function putWholeFile(file: File, pathname: string, clientToken: string, onProgress: (percent: number) => void) {
+  onProgress(1);
+  const query = new URLSearchParams({ pathname });
+  const data = await blobRequest(`/?${query.toString()}`, clientToken, file.type, {
+    method: "PUT",
+    body: file,
   });
+  if (!data.url) throw new Error("Upload finished without a file address.");
+  onProgress(100);
+  return data.url;
+}
+
+async function putInParts(file: File, pathname: string, clientToken: string, onProgress: (percent: number) => void) {
+  const query = new URLSearchParams({ pathname });
+  const created = await blobRequest(`/mpu?${query.toString()}`, clientToken, file.type, {
+    method: "POST",
+    headers: { "x-mpu-action": "create" },
+  });
+  if (!created.uploadId || !created.key) throw new Error("Upload could not start.");
+
+  const parts: { partNumber: number; etag: string }[] = [];
+  let sent = 0;
+  let partNumber = 1;
+  while (sent < file.size) {
+    const chunk = file.slice(sent, Math.min(sent + PART_SIZE, file.size));
+    const uploaded = await blobRequest(`/mpu?${query.toString()}`, clientToken, file.type, {
+      method: "POST",
+      headers: {
+        "x-mpu-action": "upload",
+        "x-mpu-key": encodeURIComponent(created.key),
+        "x-mpu-upload-id": created.uploadId,
+        "x-mpu-part-number": String(partNumber),
+      },
+      body: chunk,
+    });
+    if (!uploaded.etag) throw new Error("Upload failed while sending the file.");
+    parts.push({ partNumber, etag: uploaded.etag });
+    sent += chunk.size;
+    partNumber += 1;
+    onProgress(Math.max(1, Math.min(99, Math.round((sent / file.size) * 100))));
+  }
+
+  const done = await blobRequest(`/mpu?${query.toString()}`, clientToken, file.type, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-mpu-action": "complete",
+      "x-mpu-upload-id": created.uploadId,
+      "x-mpu-key": encodeURIComponent(created.key),
+    },
+    body: JSON.stringify(parts),
+  });
+  if (!done.url) throw new Error("Upload finished without a file address.");
+  onProgress(100);
+  return done.url;
 }
 
 export async function uploadFileToBlob(file: File, kind: UploadKind, onProgress: (percent: number) => void) {
   const safeName = file.name.replace(/[^\w.-]+/g, "-").replace(/^-+/, "").slice(-80) || "file";
   const pathname = `uploads/${safeName}`;
+  const multipart = file.size > MULTIPART_AFTER;
   onProgress(0);
 
   let response: Response;
@@ -95,7 +136,7 @@ export async function uploadFileToBlob(file: File, kind: UploadKind, onProgress:
         payload: {
           pathname,
           clientPayload: JSON.stringify({ kind }),
-          multipart: false,
+          multipart,
         },
       }),
       signal: AbortSignal.timeout(20_000),
@@ -115,5 +156,6 @@ export async function uploadFileToBlob(file: File, kind: UploadKind, onProgress:
     throw new Error(payload.error || "Upload could not start. Refresh the page and try again.");
   }
 
-  return putBlob(file, pathname, payload.clientToken, onProgress);
+  if (multipart) return putInParts(file, pathname, payload.clientToken, onProgress);
+  return putWholeFile(file, pathname, payload.clientToken, onProgress);
 }
