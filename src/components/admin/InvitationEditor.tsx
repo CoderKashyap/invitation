@@ -76,10 +76,12 @@ function ImageField({
   label,
   value,
   onChange,
+  natural = false,
 }: {
   label: string;
   value: string;
   onChange: (url: string) => void;
+  natural?: boolean;
 }) {
   const [progress, setProgress] = useState<number | null>(null);
   const mode = useContext(UploadModeContext);
@@ -88,7 +90,15 @@ function ImageField({
       <p className="font-serif text-sm text-[#6b2040]">{label}</p>
       {value ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={value} alt="" className="mt-3 h-28 w-full rounded-xl object-cover" />
+        <img
+          src={value}
+          alt=""
+          className={
+            natural
+              ? "mt-3 h-auto w-full rounded-xl"
+              : "mt-3 h-28 w-full rounded-xl object-cover"
+          }
+        />
       ) : null}
       <input
         value={value}
@@ -857,6 +867,7 @@ export function InvitationEditor({
               <div className="mt-4">
                 <ImageField
                   label="Event image"
+                  natural
                   value={ceremony.image}
                   onChange={(image) => {
                     const ceremonies = content.ceremonies.map((item, i) =>

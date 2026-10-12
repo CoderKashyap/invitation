@@ -43,21 +43,27 @@ const THEMES: Record<
 function CeremonyPanel({ ceremony }: { ceremony: Ceremony }) {
   const theme = THEMES[ceremony.theme] ?? THEMES.wedding;
 
+  const showContent = ceremony.showContent !== false;
+
   return (
-    <section id={ceremony.id} className="relative isolate w-full overflow-hidden">
-      <div
-        className="absolute inset-0 bg-cover bg-center"
-        style={{
-          backgroundImage: ceremony.image ? `url(${ceremony.image})` : undefined,
-          backgroundColor: "#4a1530",
-        }}
-      />
-      {ceremony.showContent !== false ? (
-        <div className={`absolute inset-0 ${theme.overlay}`} />
+    <section id={ceremony.id} className="relative isolate grid w-full bg-[#4a1530]">
+      {ceremony.image ? (
+        // The file’s own proportions set the section: full width, height follows.
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={ceremony.image}
+          alt={ceremony.title || "Event"}
+          className="col-start-1 row-start-1 block h-auto w-full self-center"
+        />
+      ) : (
+        <div className="col-start-1 row-start-1 min-h-dvh" />
+      )}
+      {showContent ? (
+        <div className={`col-start-1 row-start-1 ${theme.overlay}`} />
       ) : null}
 
-      <div className="relative z-10 mx-auto flex min-h-dvh w-full max-w-3xl items-center px-5 py-20 sm:py-28">
-        {ceremony.showContent !== false ? (
+      {showContent ? (
+        <div className="relative z-10 col-start-1 row-start-1 mx-auto flex w-full max-w-3xl items-center self-center px-5 py-16 sm:py-24">
           <motion.div
             initial={{ opacity: 0, y: 36 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -92,8 +98,8 @@ function CeremonyPanel({ ceremony }: { ceremony: Ceremony }) {
               </div>
             </div>
           </motion.div>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
     </section>
   );
 }
