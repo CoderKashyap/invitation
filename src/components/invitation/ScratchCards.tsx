@@ -213,16 +213,16 @@ export function ScratchCards({
         <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-[radial-gradient(ellipse_at_top,rgba(251,113,133,0.22),transparent_70%)]" />
       )}
       <div className="relative mx-auto max-w-xl text-center">
-        <p className="font-serif text-xs tracking-[0.4em] text-[#c81e4a] uppercase">
+        {/* <p className="font-serif text-xs tracking-[0.4em] text-[#c81e4a] uppercase">
           {data.scratchKicker || "The auspicious day"}
-        </p>
+        </p> */}
         <h2 className="hero-names mt-3 text-5xl sm:text-6xl">
           {data.scratchTitle || "Scratch to reveal"}
         </h2>
         <LotusDivider />
-        <p className="mx-auto max-w-md font-serif text-lg leading-relaxed text-[#6b2040]">
+        {/* <p className="mx-auto max-w-md font-serif text-lg leading-relaxed text-[#6b2040]">
           Gently scratch the foil to reveal the wedding date.
-        </p>
+        </p> */}
 
         <motion.article
           initial={{ opacity: 0, y: 28 }}
