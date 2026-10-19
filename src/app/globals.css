@@ -81,7 +81,7 @@ body {
   height: 100dvh;
   z-index: 80;
   overflow: hidden;
-  background: #fffafb;
+  background: #ffffff;
   transition: opacity 0.8s ease, visibility 0s linear 0.85s;
 }
 
@@ -109,9 +109,8 @@ body {
   align-items: center;
   justify-content: center;
   border: 0;
-  background: #fffafb;
-  padding: 2rem 1.5rem;
-  text-align: center;
+  background: #ffffff;
+  padding: 0;
 }
 
 .intro-play-hit {

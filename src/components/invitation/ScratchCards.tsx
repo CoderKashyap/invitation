@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
 import type { Invitation } from "@/lib/invitation";
 import { Countdown } from "./Countdown";
-import { GoldCorners, LotusDivider } from "./Ornaments";
+import { GoldCorners } from "./Ornaments";
 import { PartyPopper } from "./PartyPopper";
 
 function paintFoil(
@@ -60,13 +60,6 @@ function paintFoil(
   ctx.strokeRect(12, 12, width - 24, height - 24);
   ctx.setLineDash([]);
 
-  ctx.fillStyle = "rgba(255, 241, 242, 0.92)";
-  ctx.textAlign = "center";
-  ctx.font = `600 16px "Cinzel", serif`;
-  ctx.fillText("SCRATCH TO REVEAL", width / 2, height / 2 - 8);
-  ctx.font = `500 15px "Cormorant Garamond", serif`;
-  ctx.fillStyle = "rgba(255, 228, 236, 0.82)";
-  ctx.fillText("The wedding date waits beneath", width / 2, height / 2 + 16);
 }
 
 export function ScratchCards({
@@ -194,12 +187,18 @@ export function ScratchCards({
     measure();
   };
 
+  const hasBackground = Boolean(data.scratchUseTheme && data.scratchBackground);
+
   return (
     <section
       id="scratch-cards"
-      className="relative overflow-hidden px-5 py-14 sm:py-20"
+      className={`relative flex items-center justify-center overflow-hidden px-5 ${
+        hasBackground
+          ? "min-h-[72vh] py-16 sm:min-h-[82vh] sm:py-20"
+          : "min-h-[420px] py-14 sm:py-20"
+      }`}
       style={
-        data.scratchUseTheme && data.scratchBackground
+        hasBackground
           ? {
               backgroundImage: `url(${data.scratchBackground})`,
               backgroundSize: "cover",
@@ -209,27 +208,16 @@ export function ScratchCards({
       }
     >
       <PartyPopper burst={burst} />
-      {data.scratchUseTheme && data.scratchBackground ? null : (
+      {hasBackground ? null : (
         <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-[radial-gradient(ellipse_at_top,rgba(251,113,133,0.22),transparent_70%)]" />
       )}
-      <div className="relative mx-auto max-w-xl text-center">
-        {/* <p className="font-serif text-xs tracking-[0.4em] text-[#c81e4a] uppercase">
-          {data.scratchKicker || "The auspicious day"}
-        </p> */}
-        <h2 className="hero-names mt-3 text-5xl sm:text-6xl">
-          {data.scratchTitle || "Scratch to reveal"}
-        </h2>
-        <LotusDivider />
-        {/* <p className="mx-auto max-w-md font-serif text-lg leading-relaxed text-[#6b2040]">
-          Gently scratch the foil to reveal the wedding date.
-        </p> */}
-
+      <div className="relative mx-auto w-full max-w-xl text-center">
         <motion.article
           initial={{ opacity: 0, y: 28 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-          className="scratch-luxury relative mx-auto mt-8 overflow-hidden rounded-[26px] border border-[#f9a8d4] bg-[#fffafb] p-4 shadow-[0_22px_50px_rgba(190,24,93,0.1)] sm:p-5"
+          className="scratch-luxury relative mx-auto overflow-hidden rounded-[26px] border border-[#f9a8d4] bg-[#fffafb] p-4 shadow-[0_22px_50px_rgba(190,24,93,0.1)] sm:p-5"
         >
           <GoldCorners />
           <div

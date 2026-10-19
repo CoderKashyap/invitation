@@ -15,10 +15,12 @@ export function VenueMap({ data }: { data: Invitation }) {
         </p>
         <h2 className="hero-names mt-3 text-5xl sm:text-6xl">Venue</h2>
         <LotusDivider />
-        <p className="font-cinzel text-lg tracking-[0.14em] text-[#9d174d] uppercase">
+        <p className="whitespace-pre-line font-cinzel text-lg leading-relaxed tracking-normal text-[#9d174d]">
           {data.map.label}
         </p>
-        <p className="mt-2 font-serif text-[#6b2040]">{data.map.address}</p>
+        <p className="mt-2 whitespace-pre-line font-serif leading-relaxed text-[#6b2040]">
+          {data.map.address}
+        </p>
         <p className="mt-1 font-serif text-sm text-[#6b2040]/75">
           {data.wedding.displayDate} · {data.wedding.displayTime}
         </p>
@@ -48,28 +50,46 @@ export function VenueMap({ data }: { data: Invitation }) {
 }
 
 export function InvitationFooter({ data }: { data: Invitation }) {
+  if (data.showClosing === false) return null;
+
+  const names =
+    (data.closingNames ?? "").trim() ||
+    `${data.groom.firstName} & ${data.bride.firstName}`;
+  const date = (data.closingDate ?? "").trim() || data.wedding.displayDate;
+  const venue = (data.closingVenue ?? "").trim() || data.map.label;
+
   return (
     <footer className="relative z-20 overflow-hidden border-t border-[#f9a8d4] bg-[linear-gradient(180deg,#fffafb,#ffe4ec)] px-5 py-16 text-center">
       <div className="pointer-events-none absolute top-0 right-8 left-8 h-px bg-linear-to-r from-transparent via-[#f472b6] to-transparent" />
       <LotusDivider />
-      <p className="font-script text-4xl text-[#c81e4a] sm:text-5xl">
-        We request the pleasure of your company
-      </p>
-      <p className="hero-names mt-3 text-4xl">
-        {data.groom.firstName} & {data.bride.firstName}
-      </p>
-      <p className="mt-4 font-serif text-[#6b2040]">
-        {data.wedding.displayDate}
-      </p>
-      <p className="mt-1 font-serif text-sm text-[#6b2040]/80">
-        {data.map.label} · {data.wedding.city}
-      </p>
-      <p className="mt-8 font-serif text-sm italic text-[#9d174d]/80">
-        With love, light, and the blessings of our families
-      </p>
-      <p className="mt-10 font-serif text-[11px] tracking-[0.28em] text-[#9d174d]/50 uppercase">
-        A wedding invitation
-      </p>
+      {(data.closingTitle ?? "").trim() ? (
+        <p className="whitespace-pre-line font-script text-4xl text-[#c81e4a] sm:text-5xl">
+          {data.closingTitle}
+        </p>
+      ) : null}
+      {names ? (
+        <p className="hero-names mt-3 whitespace-pre-line text-4xl">{names}</p>
+      ) : null}
+      {date ? (
+        <p className="mt-4 whitespace-pre-line font-serif text-[#6b2040]">
+          {date}
+        </p>
+      ) : null}
+      {venue ? (
+        <p className="mt-1 whitespace-pre-line font-serif text-sm leading-relaxed text-[#6b2040]/80">
+          {venue}
+        </p>
+      ) : null}
+      {(data.closingBlessing ?? "").trim() ? (
+        <p className="mt-8 whitespace-pre-line font-serif text-sm italic text-[#9d174d]/80">
+          {data.closingBlessing}
+        </p>
+      ) : null}
+      {(data.closingTagline ?? "").trim() ? (
+        <p className="mt-10 whitespace-pre-line font-serif text-[11px] tracking-[0.28em] text-[#9d174d]/50 uppercase">
+          {data.closingTagline}
+        </p>
+      ) : null}
     </footer>
   );
 }

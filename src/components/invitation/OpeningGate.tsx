@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { Invitation } from "@/lib/invitation";
-import { LotusDivider, OmMark } from "./Ornaments";
 
 export function OpeningGate({
   data,
@@ -116,13 +115,7 @@ export function OpeningGate({
       ) : null}
 
       {data.introVideo && !ready && !playing ? (
-        <div className="intro-hold">
-          <OmMark className="text-3xl" />
-          <p className="hero-names mt-5 text-6xl sm:text-8xl">
-            {data.groom.firstName} & {data.bride.firstName}
-          </p>
-          <LotusDivider />
-        </div>
+        <div className="intro-hold" aria-hidden="true" />
       ) : null}
 
       {data.introVideo && ready && !playing ? (

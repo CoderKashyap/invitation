@@ -687,6 +687,16 @@ export function InvitationEditor({
             </select>
           </Field>
         </div>
+        <div className="mt-5">
+          <ImageField
+            label="Gallery background image"
+            value={content.galleryBackground ?? ""}
+            onChange={(galleryBackground) => patch({ galleryBackground })}
+          />
+          <p className="mt-2 font-serif text-sm text-[#6b2040]">
+            Optional. Shows behind the photo grid.
+          </p>
+        </div>
         <div className="mt-5 grid gap-5 sm:grid-cols-2">
           {(content.coupleImages ?? []).length === 0 ? (
             <p className="font-serif text-sm text-[#6b2040] sm:col-span-2">
@@ -953,7 +963,11 @@ export function InvitationEditor({
         <h2 className="font-cinzel text-lg tracking-[0.16em] text-[#9d174d] uppercase">
           Venue map
         </h2>
-        <div className="mt-5 grid gap-4 sm:grid-cols-2">
+        <p className="mt-2 font-serif text-sm text-[#6b2040]">
+          Press Enter in the label or address boxes to put text on the next
+          line — for example, put Mob. on its own line.
+        </p>
+        <div className="mt-5 grid gap-4">
           <Field label="Map search query">
             <input
               className={inputClass}
@@ -961,21 +975,100 @@ export function InvitationEditor({
               onChange={(e) => patch({ map: { ...content.map, query: e.target.value } })}
             />
           </Field>
-          <Field label="Map label">
-            <input
+          <Field label="Venue heading">
+            <textarea
               className={inputClass}
+              rows={3}
               value={content.map.label}
               onChange={(e) => patch({ map: { ...content.map, label: e.target.value } })}
             />
           </Field>
           <Field label="Address">
-            <input
+            <textarea
               className={inputClass}
+              rows={4}
               value={content.map.address}
               onChange={(e) => patch({ map: { ...content.map, address: e.target.value } })}
             />
           </Field>
         </div>
+      </section>
+
+      <section className="rounded-[28px] border border-[#f9a8d4] bg-white p-6 sm:p-8">
+        <h2 className="font-cinzel text-lg tracking-[0.16em] text-[#9d174d] uppercase">
+          Closing invitation
+        </h2>
+        <p className="mt-2 font-serif text-sm text-[#6b2040]">
+          The “We request the pleasure of your company” block at the end.
+          Hide it entirely, or edit every line. Press Enter for a new line.
+        </p>
+        <div className="mt-5 max-w-md">
+          <Field label="Show this section">
+            <select
+              className={inputClass}
+              value={content.showClosing === false ? "no" : "yes"}
+              onChange={(e) => patch({ showClosing: e.target.value === "yes" })}
+            >
+              <option value="yes">Yes, show it</option>
+              <option value="no">No, hide it</option>
+            </select>
+          </Field>
+        </div>
+        {content.showClosing === false ? null : (
+          <div className="mt-5 grid gap-4">
+            <Field label="Title">
+              <textarea
+                className={inputClass}
+                rows={2}
+                value={content.closingTitle ?? ""}
+                onChange={(e) => patch({ closingTitle: e.target.value })}
+                placeholder="We request the pleasure of your company"
+              />
+            </Field>
+            <Field label="Names">
+              <textarea
+                className={inputClass}
+                rows={2}
+                value={content.closingNames ?? ""}
+                onChange={(e) => patch({ closingNames: e.target.value })}
+                placeholder={`${content.groom.firstName} & ${content.bride.firstName}`}
+              />
+            </Field>
+            <Field label="Date line">
+              <textarea
+                className={inputClass}
+                rows={2}
+                value={content.closingDate ?? ""}
+                onChange={(e) => patch({ closingDate: e.target.value })}
+                placeholder={content.wedding.displayDate}
+              />
+            </Field>
+            <Field label="Venue line">
+              <textarea
+                className={inputClass}
+                rows={3}
+                value={content.closingVenue ?? ""}
+                onChange={(e) => patch({ closingVenue: e.target.value })}
+                placeholder={content.map.label}
+              />
+            </Field>
+            <Field label="Blessing">
+              <textarea
+                className={inputClass}
+                rows={2}
+                value={content.closingBlessing ?? ""}
+                onChange={(e) => patch({ closingBlessing: e.target.value })}
+              />
+            </Field>
+            <Field label="Tagline">
+              <input
+                className={inputClass}
+                value={content.closingTagline ?? ""}
+                onChange={(e) => patch({ closingTagline: e.target.value })}
+              />
+            </Field>
+          </div>
+        )}
       </section>
 
       <section className="rounded-[28px] border border-[#f9a8d4] bg-white p-6 sm:p-8">

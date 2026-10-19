@@ -70,9 +70,17 @@ export type Invitation = {
   heroImage: string;
   doorImage: string;
   showGallery: boolean;
+  galleryBackground: string;
   showCoupleIntro: boolean;
   coupleIntroImage: string;
   coupleImages: CoupleImage[];
+  showClosing: boolean;
+  closingTitle: string;
+  closingNames: string;
+  closingDate: string;
+  closingVenue: string;
+  closingBlessing: string;
+  closingTagline: string;
   ceremonies: Ceremony[];
   rituals: Ritual[];
   scratchCards: ScratchCard[];
@@ -128,6 +136,7 @@ export const invitation: Invitation = {
   heroImage: "/images/hero-fullscreen.png",
   doorImage: "/images/palace-doors.png",
   showGallery: true,
+  galleryBackground: "",
   showCoupleIntro: true,
   coupleIntroImage: "",
   coupleImages: [
@@ -254,6 +263,13 @@ export const invitation: Invitation = {
     label: "The Royal Palace",
     address: "City Palace Complex, Udaipur, Rajasthan 313001",
   },
+  showClosing: true,
+  closingTitle: "We request the pleasure of your company",
+  closingNames: "",
+  closingDate: "",
+  closingVenue: "",
+  closingBlessing: "With love, light, and the blessings of our families",
+  closingTagline: "A wedding invitation",
   showBranding: true,
   brandingText: "Crafted with Invitation Studio",
   contactNumber: "",
@@ -267,8 +283,16 @@ export function normalizeInvitation(content: Partial<Invitation> | Invitation): 
     introVideo: content.introVideo ?? invitation.introVideo,
     welcomeImage: content.welcomeImage ?? invitation.welcomeImage,
     showGallery: content.showGallery ?? invitation.showGallery,
+    galleryBackground: content.galleryBackground ?? invitation.galleryBackground,
     showCoupleIntro: content.showCoupleIntro ?? invitation.showCoupleIntro,
     coupleIntroImage: content.coupleIntroImage ?? invitation.coupleIntroImage,
+    showClosing: content.showClosing ?? invitation.showClosing,
+    closingTitle: content.closingTitle ?? invitation.closingTitle,
+    closingNames: content.closingNames ?? invitation.closingNames,
+    closingDate: content.closingDate ?? invitation.closingDate,
+    closingVenue: content.closingVenue ?? invitation.closingVenue,
+    closingBlessing: content.closingBlessing ?? invitation.closingBlessing,
+    closingTagline: content.closingTagline ?? invitation.closingTagline,
     scratchUseTheme: content.scratchUseTheme ?? invitation.scratchUseTheme,
     scratchBackground: content.scratchBackground ?? invitation.scratchBackground,
     showBranding: content.showBranding ?? invitation.showBranding,

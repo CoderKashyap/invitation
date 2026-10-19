@@ -63,7 +63,15 @@ export function CoupleGallery({ data }: { data: Invitation }) {
       ) : null}
 
       {data.showGallery && photos.length ? (
-        <div className="mx-auto mt-14 grid max-w-5xl gap-5 px-5 pb-20 sm:grid-cols-2 sm:pb-28 lg:grid-cols-3">
+        <div
+          className="relative mt-14 bg-cover bg-center bg-no-repeat py-10 sm:py-14"
+          style={
+            data.galleryBackground
+              ? { backgroundImage: `url(${data.galleryBackground})` }
+              : undefined
+          }
+        >
+        <div className="relative mx-auto grid max-w-5xl gap-5 px-5 pb-10 sm:grid-cols-2 sm:pb-14 lg:grid-cols-3">
           {photos.map((image, index) => (
             <motion.figure
               key={`${image.src}-${index}`}
@@ -90,6 +98,7 @@ export function CoupleGallery({ data }: { data: Invitation }) {
               ) : null}
             </motion.figure>
           ))}
+        </div>
         </div>
       ) : null}
     </section>
