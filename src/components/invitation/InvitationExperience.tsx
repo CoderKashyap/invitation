@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Invitation } from "@/lib/invitation";
 import { CeremonyChapters } from "./CeremonyChapters";
 import { CoupleGallery } from "./CoupleGallery";
@@ -18,7 +18,9 @@ function jumpToTop() {
 
 export function InvitationExperience({ data }: { data: Invitation }) {
   const [opened, setOpened] = useState(false);
+  const [musicOn, setMusicOn] = useState(false);
   const [visit, setVisit] = useState(0);
+  const audioRef = useRef<HTMLAudioElement>(null);
 
   useEffect(() => {
     if ("scrollRestoration" in history) {
@@ -30,6 +32,7 @@ export function InvitationExperience({ data }: { data: Invitation }) {
       jumpToTop();
       if (event.persisted) {
         setOpened(false);
+        setMusicOn(false);
         setVisit((n) => n + 1);
       }
     };
@@ -48,6 +51,16 @@ export function InvitationExperience({ data }: { data: Invitation }) {
     };
   }, [opened]);
 
+  const startMusic = useCallback(() => {
+    setMusicOn(true);
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.volume = 0.55;
+    void audio.play().catch(() => {
+      /* browsers may still require the later effect */
+    });
+  }, []);
+
   const openInvitation = useCallback(() => {
     jumpToTop();
     setOpened(true);
@@ -59,8 +72,17 @@ export function InvitationExperience({ data }: { data: Invitation }) {
 
   return (
     <div className="invitation-page relative min-h-dvh w-full">
-      <OpeningGate key={visit} data={data} onComplete={openInvitation} />
-      <InvitationAudio src={data.backgroundAudio} active={opened} />
+      <OpeningGate
+        key={visit}
+        data={data}
+        onEnter={startMusic}
+        onComplete={openInvitation}
+      />
+      <InvitationAudio
+        src={data.backgroundAudio}
+        active={musicOn}
+        mediaRef={audioRef}
+      />
       <FlowerShower active={opened} />
       <main
         className={`relative z-10 w-full transition-opacity duration-700 ${

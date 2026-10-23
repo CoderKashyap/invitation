@@ -419,8 +419,8 @@ export function InvitationEditor({
             onChange={(backgroundAudio) => patch({ backgroundAudio })}
           />
           <p className="mt-2 font-serif text-sm text-[#6b2040]">
-            Plays when the main invitation opens. Guests can mute it with a
-            small button.
+            Starts when guests tap to enter. They can mute it with a small
+            button.
           </p>
         </div>
         <div className="mt-5 grid gap-4 sm:grid-cols-2">

@@ -5,9 +5,11 @@ import type { Invitation } from "@/lib/invitation";
 
 export function OpeningGate({
   data,
+  onEnter,
   onComplete,
 }: {
   data: Invitation;
+  onEnter?: () => void;
   onComplete: () => void;
 }) {
   const [ready, setReady] = useState(false);
@@ -41,6 +43,7 @@ export function OpeningGate({
     started.current = true;
     revealVideo();
     setPlaying(true);
+    onEnter?.();
     try {
       await video.play();
       const duration = video.duration;
@@ -55,6 +58,7 @@ export function OpeningGate({
 
   useEffect(() => {
     if (!data.introVideo) {
+      onEnter?.();
       onComplete();
       setGone(true);
       return;

@@ -1,16 +1,32 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 
 export function InvitationAudio({
   src,
   active,
+  mediaRef,
 }: {
   src: string;
   active: boolean;
+  mediaRef?: RefObject<HTMLAudioElement | null>;
 }) {
-  const audioRef = useRef<HTMLAudioElement>(null);
+  const localRef = useRef<HTMLAudioElement>(null);
+  const audioRef = mediaRef ?? localRef;
   const [on, setOn] = useState(false);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    const onPlay = () => setOn(true);
+    const onPause = () => setOn(false);
+    audio.addEventListener("play", onPlay);
+    audio.addEventListener("pause", onPause);
+    return () => {
+      audio.removeEventListener("play", onPlay);
+      audio.removeEventListener("pause", onPause);
+    };
+  }, [src, audioRef]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -20,9 +36,8 @@ export function InvitationAudio({
       try {
         audio.volume = 0.55;
         await audio.play();
-        setOn(true);
       } catch {
-        setOn(false);
+        /* click handler also tries play() */
       }
     };
 
@@ -30,23 +45,21 @@ export function InvitationAudio({
     return () => {
       audio.pause();
     };
-  }, [src, active]);
+  }, [src, active, audioRef]);
 
-  if (!src || !active) return null;
+  if (!src) return null;
 
   const toggle = async () => {
     const audio = audioRef.current;
     if (!audio) return;
     if (on) {
       audio.pause();
-      setOn(false);
       return;
     }
     try {
       await audio.play();
-      setOn(true);
     } catch {
-      setOn(false);
+      /* ignored */
     }
   };
 
@@ -56,7 +69,9 @@ export function InvitationAudio({
       <button
         type="button"
         onClick={() => void toggle()}
-        className="fixed right-3 bottom-14 z-50 grid h-9 w-9 place-items-center rounded-full bg-[#c81e4a] text-white shadow-[0_8px_18px_rgba(190,24,93,0.35)]"
+        className={`fixed right-3 bottom-14 z-[90] grid h-9 w-9 place-items-center rounded-full bg-[#c81e4a] text-white shadow-[0_8px_18px_rgba(190,24,93,0.35)] ${
+          active ? "" : "pointer-events-none opacity-0"
+        }`}
         aria-label={on ? "Mute invitation audio" : "Play invitation audio"}
       >
         {on ? (
