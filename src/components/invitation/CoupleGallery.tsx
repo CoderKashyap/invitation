@@ -52,7 +52,7 @@ export function CoupleGallery({ data }: { data: Invitation }) {
           </div>
         </div>
       ) : data.coupleIntroImage ? (
-        <div className="w-full bg-[#fff7f4]">
+        <div className="w-full leading-none">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={data.coupleIntroImage}
@@ -64,14 +64,19 @@ export function CoupleGallery({ data }: { data: Invitation }) {
 
       {data.showGallery && photos.length ? (
         <div
-          className="relative mt-14 bg-cover bg-center bg-no-repeat py-10 sm:py-14"
+          className="relative w-full overflow-hidden px-5 py-6 sm:py-8"
           style={
             data.galleryBackground
-              ? { backgroundImage: `url(${data.galleryBackground})` }
+              ? {
+                  backgroundImage: `url(${data.galleryBackground})`,
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                  backgroundRepeat: "no-repeat",
+                }
               : undefined
           }
         >
-        <div className="relative mx-auto grid max-w-5xl gap-5 px-5 pb-10 sm:grid-cols-2 sm:pb-14 lg:grid-cols-3">
+        <div className="relative mx-auto grid max-w-5xl gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {photos.map((image, index) => (
             <motion.figure
               key={`${image.src}-${index}`}
