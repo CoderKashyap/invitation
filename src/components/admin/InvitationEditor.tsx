@@ -3,6 +3,7 @@
 import { createContext, useContext, useState } from "react";
 import Link from "next/link";
 import { uploadFileToBlob } from "@/lib/blob-browser";
+import { uploadFileToCloudinary } from "@/lib/cloudinary-browser";
 import { saveInvitationAction } from "@/lib/actions";
 import type { Ceremony, CeremonyTheme, Invitation } from "@/lib/invitation";
 import type { InvitationRecord } from "@/lib/types";
@@ -45,10 +46,11 @@ async function uploadFile(
 
   if (mode === "unavailable") {
     throw new Error(
-      "This live site cannot store files on its own disk. In Vercel, open Storage, create a Blob store for this project, then redeploy.",
+      "Uploads are not configured. Add Cloudinary credentials and redeploy.",
     );
   }
 
+  if (mode === "cloudinary") return uploadFileToCloudinary(file, kind, onProgress);
   if (mode === "blob") return uploadFileToBlob(file, kind, onProgress);
 
   const body = new FormData();

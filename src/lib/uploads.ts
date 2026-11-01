@@ -1,5 +1,13 @@
 export type UploadKind = "image" | "video" | "audio";
-export type UploadMode = "blob" | "local" | "unavailable";
+export type UploadMode = "cloudinary" | "blob" | "local" | "unavailable";
+
+export function hasCloudinaryConfig() {
+  return Boolean(
+    process.env.CLOUDINARY_CLOUD_NAME &&
+      process.env.CLOUDINARY_API_KEY &&
+      process.env.CLOUDINARY_API_SECRET,
+  );
+}
 
 const LIMITS: Record<UploadKind, number> = {
   image: 8 * 1024 * 1024,
@@ -22,6 +30,7 @@ const TYPES: Record<UploadKind, string[]> = {
 };
 
 export function resolveUploadMode(): UploadMode {
+  if (hasCloudinaryConfig()) return "cloudinary";
   if (process.env.BLOB_READ_WRITE_TOKEN) return "blob";
   if (process.env.VERCEL) return "unavailable";
   return "local";
